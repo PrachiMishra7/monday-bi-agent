@@ -1,16 +1,13 @@
 import requests
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
 import streamlit as st
 
+# Get API key from Streamlit secrets
 MONDAY_API_KEY = st.secrets["MONDAY_API_KEY"]
+
 URL = "https://api.monday.com/v2"
 
 HEADERS = {
-    "Authorization": API_KEY,
+    "Authorization": MONDAY_API_KEY,
     "Content-Type": "application/json",
     "API-Version": "2024-01"
 }
@@ -74,8 +71,15 @@ def get_all_items_for_board(board_data):
           }}
         }}
         """
+
         try:
-            resp = requests.post(URL, json={"query": paginated_query}, headers=HEADERS, timeout=15)
+            resp = requests.post(
+                URL,
+                json={"query": paginated_query},
+                headers=HEADERS,
+                timeout=15
+            )
+
             resp.raise_for_status()
             result = resp.json()
 
@@ -84,6 +88,7 @@ def get_all_items_for_board(board_data):
 
             page_board = result["data"]["boards"][0]
             page_items = page_board["items_page"]["items"]
+
             all_items.extend(page_items)
             cursor = page_board["items_page"].get("cursor")
 
@@ -96,9 +101,9 @@ def get_all_items_for_board(board_data):
 def get_boards():
     """
     Fetch all boards and items from monday.com with pagination and error handling.
-    Returns a dict with 'data', 'error', and 'boards_fetched' keys.
     """
-    if not API_KEY:
+
+    if not MONDAY_API_KEY:
         return {
             "data": None,
             "error": "MONDAY_API_KEY not set in environment variables.",
@@ -112,6 +117,7 @@ def get_boards():
             headers=HEADERS,
             timeout=15
         )
+
         response.raise_for_status()
         result = response.json()
 
@@ -122,8 +128,9 @@ def get_boards():
                 "boards_fetched": []
             }
 
-        # Paginate each board
         boards = result["data"]["boards"]
+
+        # Paginate each board
         for board in boards:
             board["items_page"]["items"] = get_all_items_for_board(board)
 
@@ -141,19 +148,37 @@ def get_boards():
             "error": "Request timed out. monday.com API may be slow — please retry.",
             "boards_fetched": []
         }
+
     except requests.exceptions.ConnectionError:
         return {
             "data": None,
             "error": "Could not connect to monday.com. Check your internet connection.",
             "boards_fetched": []
         }
+
     except requests.exceptions.HTTPError as e:
         status = e.response.status_code if e.response else "unknown"
+
         if status == 401:
-            return {"data": None, "error": "Invalid monday.com API key (401 Unauthorized).", "boards_fetched": []}
+            return {
+                "data": None,
+                "error": "Invalid monday.com API key (401 Unauthorized).",
+                "boards_fetched": []
+            }
+
         elif status == 429:
-            return {"data": None, "error": "Rate limited by monday.com API. Please wait and retry.", "boards_fetched": []}
-        return {"data": None, "error": f"HTTP error {status} from monday.com.", "boards_fetched": []}
+            return {
+                "data": None,
+                "error": "Rate limited by monday.com API. Please wait and retry.",
+                "boards_fetched": []
+            }
+
+        return {
+            "data": None,
+            "error": f"HTTP error {status} from monday.com.",
+            "boards_fetched": []
+        }
+
     except Exception as e:
         return {
             "data": None,
