@@ -204,4 +204,4 @@ GitHub Repository
 https://github.com/PrachiMishra7/monday-bi-agent
 
 Live Demo  
-(Add your Streamlit deployment link here)
+https://monday-bi-agent-2lwwkwxl5vcke4fl2cai6b.streamlit.app/
