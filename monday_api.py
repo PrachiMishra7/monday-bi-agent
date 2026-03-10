@@ -4,7 +4,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_KEY = os.getenv("MONDAY_API_KEY")
+import streamlit as st
+
+MONDAY_API_KEY = st.secrets["MONDAY_API_KEY"]
 URL = "https://api.monday.com/v2"
 
 HEADERS = {
